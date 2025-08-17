@@ -1,30 +1,26 @@
-﻿using BreweryApi.Models;
+﻿using AutoMapper;
+using BreweryApi.Models;
 
 namespace BreweryApi.Services
 {
     public class BreweryApiClient
     {
         private readonly HttpClient _httpClient;
+        private readonly IMapper _mapper;
 
-        public BreweryApiClient(HttpClient httpClient)
+        public BreweryApiClient(HttpClient httpClient, IMapper mapper)
         {
             _httpClient = httpClient;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<BreweryModel>> FetchBreweriesAsync()
         {
-            var breweries = await _httpClient.GetFromJsonAsync<List<dynamic>>("https://api.openbrewerydb.org/v1/breweries");
+            var response = await _httpClient.GetFromJsonAsync<List<OpenBreweryResponse>>("https://api.openbrewerydb.org/v1/breweries");
 
-            if (breweries == null) return Enumerable.Empty<BreweryModel>();
+            if (response == null) return Enumerable.Empty<BreweryModel>();
 
-            return breweries.Select(b => new BreweryModel
-            {
-                Name = b.name,
-                City = b.city,
-                Phone = b.phone,
-                Longitude = double.TryParse((string)b.longitude, out var lon) ? lon : null,
-                Latitude = double.TryParse((string)b.latitude, out var lat) ? lat : null
-            });
+            return _mapper.Map<IEnumerable<BreweryModel>>(response);
         }
     }
 }

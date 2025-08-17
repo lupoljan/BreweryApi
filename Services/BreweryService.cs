@@ -1,4 +1,5 @@
-﻿using BreweryApi.Models;
+﻿using AutoMapper;
+using BreweryApi.Models;
 using BreweryApi.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -9,14 +10,16 @@ namespace BreweryApi.Services
         private readonly IBreweryRepository _repository;
         private readonly BreweryApiClient _apiClient;
         private readonly IMemoryCache _cache;
+        private readonly IMapper _mapper;
         private const string CacheKey = "BreweryCache";
         private const int CacheDuration = 10; // minutes
 
-        public BreweryService(IBreweryRepository repository, BreweryApiClient apiClient, IMemoryCache cache)
+        public BreweryService(IBreweryRepository repository, BreweryApiClient apiClient, IMemoryCache cache, IMapper mapper)
         {
             _repository = repository;
             _apiClient = apiClient;
             _cache = cache;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<BreweryDto>> GetBreweriesAsync(string? search, string? sort, double? userLat, double? userLon)
@@ -36,16 +39,20 @@ namespace BreweryApi.Services
                 query = query.Where(b => b.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                                          b.City.Contains(search, StringComparison.OrdinalIgnoreCase));
 
-            // Map to DTO
-            var dtos = query.Select(b => new BreweryDto
+            // Map to DTOs
+            var dtos = _mapper.Map<IEnumerable<BreweryDto>>(query);
+
+            // Add calculated distance if coordinates provided
+            if (userLat != null && userLon != null)
             {
-                Name = b.Name,
-                City = b.City,
-                Phone = b.Phone,
-                Distance = (userLat != null && userLon != null && b.Latitude != null && b.Longitude != null)
-                    ? CalculateDistance(userLat.Value, userLon.Value, b.Latitude.Value, b.Longitude.Value)
-                    : null
-            });
+                foreach (var (dto, b) in dtos.Zip(query))
+                {
+                    if (b.Latitude != null && b.Longitude != null)
+                    {
+                        dto.Distance = CalculateDistance(userLat.Value, userLon.Value, b.Latitude.Value, b.Longitude.Value);
+                    }
+                }
+            }
 
             // Sorting
             dtos = sort?.ToLower() switch
