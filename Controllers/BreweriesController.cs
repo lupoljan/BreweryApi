@@ -42,5 +42,38 @@ namespace BreweryApi.Controllers
 
             return Ok(breweries);
         }
+
+        /// <summary>
+        /// Get brewery name suggestions for autocomplete functionality
+        /// </summary>
+        /// <remarks>
+        /// Returns matching brewery names based on partial input query.
+        /// 
+        /// Example:
+        /// GET /api/breweries/autocomplete?query=brew&limit=10
+        /// 
+        /// Sample response:
+        /// [
+        ///  "(405) Brewing Co",
+        ///  "(512) Brewing Co",
+        ///  "1 of Us Brewing Company",
+        ///  "10 Barrel Brewing Co",
+        ///  "10 Barrel Brewing Co - Bend Pub",
+        ///  "10 Barrel Brewing Co - Boise",
+        ///  "10 Barrel Brewing Co - Denver",
+        ///  "10 Torr Distilling and Brewing",
+        ///  "10-56 Brewing Company",
+        ///  "101 North Brewing Company"
+        /// ]
+        /// </remarks>
+        /// <param name="query">Partial name query for brewery suggestions</param>
+        /// <param name="limit">Maximum number of suggestions to return (default: 10)</param>
+        /// <returns>List of brewery name suggestions</returns>
+        [HttpGet("autocomplete")]
+        public async Task<IActionResult> GetAutocomplete([FromQuery] string query, [FromQuery] int limit = 10)
+        {
+            var suggestions = await _breweryService.GetAutocompleteAsync(query, limit);
+            return Ok(suggestions);
+        }
     }
 }

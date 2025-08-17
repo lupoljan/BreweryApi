@@ -74,6 +74,28 @@ namespace BreweryApi.Services
             return sortStrategy.Sort(dtos);
         }
 
+        public async Task<List<string>> GetAutocompleteAsync(string query, int limit = 10)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<string>();
+
+            _logger.LogInformation("Autocomplete requested for query: {query}", query);
+
+            var breweries = await GetBreweriesAsync(null, null, null, null);
+
+            var suggestions = breweries
+                .Where(b => b.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Select(b => b.Name)
+                .Distinct()
+                .OrderBy(name => name)
+                .Take(limit)
+                .ToList();
+
+            _logger.LogInformation("Returning {count} autocomplete suggestions.", suggestions.Count);
+            return suggestions;
+        }
+
+
         private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             const double R = 6371; // km
