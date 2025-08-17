@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BreweryApi.Models;
 using BreweryApi.Repositories;
+using BreweryApi.Sorting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -68,15 +69,9 @@ namespace BreweryApi.Services
             }
 
             // Sorting
-            dtos = sort?.ToLower() switch
-            {
-                "name" => dtos.OrderBy(b => b.Name),
-                "city" => dtos.OrderBy(b => b.City),
-                "distance" => dtos.OrderBy(b => b.Distance),
-                _ => dtos
-            };
-
-            return dtos;
+            var sortStrategy = SortStrategyFactory.GetStrategy(sort);
+            _logger.LogInformation("Applying sorting strategy: {sortStrategy.Name}", sortStrategy.Name);
+            return sortStrategy.Sort(dtos);
         }
 
         private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
