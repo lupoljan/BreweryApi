@@ -7,20 +7,34 @@ namespace BreweryApi.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IMapper _mapper;
+        private readonly ILogger<BreweryApiClient> _logger;
 
-        public BreweryApiClient(HttpClient httpClient, IMapper mapper)
+        public BreweryApiClient(HttpClient httpClient, IMapper mapper, ILogger<BreweryApiClient> logger)
         {
             _httpClient = httpClient;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<BreweryModel>> FetchBreweriesAsync()
         {
-            var response = await _httpClient.GetFromJsonAsync<List<OpenBreweryResponse>>("https://api.openbrewerydb.org/v1/breweries");
+            try
+            {
+                _logger.LogInformation("Fetching breweries from OpenBreweryDB...");
 
-            if (response == null) return Enumerable.Empty<BreweryModel>();
+                var response = await _httpClient.GetFromJsonAsync<List<OpenBreweryResponse>>("https://api.openbrewerydb.org/v1/breweries");
 
-            return _mapper.Map<IEnumerable<BreweryModel>>(response);
+                _logger.LogInformation("Successfully retrieved {Count} breweries.", response?.Count ?? 0);
+
+                if (response == null) return Enumerable.Empty<BreweryModel>();
+
+                return _mapper.Map<IEnumerable<BreweryModel>>(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch breweries from API.");
+                throw;
+            }
         }
     }
 }

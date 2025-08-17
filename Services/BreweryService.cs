@@ -2,6 +2,7 @@
 using BreweryApi.Models;
 using BreweryApi.Repositories;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace BreweryApi.Services
 {
@@ -11,19 +12,28 @@ namespace BreweryApi.Services
         private readonly BreweryApiClient _apiClient;
         private readonly IMemoryCache _cache;
         private readonly IMapper _mapper;
+        private readonly ILogger<BreweryService> _logger;
         private const string CacheKey = "BreweryCache";
         private const int CacheDuration = 10; // minutes
 
-        public BreweryService(IBreweryRepository repository, BreweryApiClient apiClient, IMemoryCache cache, IMapper mapper)
+        public BreweryService(
+            IBreweryRepository repository, 
+            BreweryApiClient apiClient, 
+            IMemoryCache cache,
+            IMapper mapper, 
+            ILogger<BreweryService> logger)
         {
             _repository = repository;
             _apiClient = apiClient;
             _cache = cache;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<BreweryDto>> GetBreweriesAsync(string? search, string? sort, double? userLat, double? userLon)
         {
+
+
             var breweries = await _cache.GetOrCreateAsync(CacheKey, async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(CacheDuration);
@@ -36,8 +46,11 @@ namespace BreweryApi.Services
 
             // Search
             if (!string.IsNullOrWhiteSpace(search))
+            {
+                _logger.LogInformation("Filtering breweries by search term: {search}", search);
                 query = query.Where(b => b.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                         b.City.Contains(search, StringComparison.OrdinalIgnoreCase));
+                         b.City.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
 
             // Map to DTOs
             var dtos = _mapper.Map<IEnumerable<BreweryDto>>(query);
