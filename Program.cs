@@ -1,8 +1,10 @@
+using BreweryApi.Data;
 using BreweryApi.Repositories;
 using BreweryApi.Services;
 using BreweryApi.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,7 +17,14 @@ builder.Logging.AddDebug();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<IBreweryRepository, InMemoryBreweryRepository>();
+//in-memory storage
+//builder.Services.AddScoped<IBreweryRepository, InMemoryBreweryRepository>();
+
+//using SQLite + EF Core
+builder.Services.AddDbContext<BreweryDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IBreweryRepository, EfBreweryRepository>();
+
 builder.Services.AddScoped<IBreweryService, BreweryService>();
 builder.Services.AddHttpClient<BreweryApiClient>();
 
@@ -64,5 +73,13 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.UseApiExceptionMiddleware();
 app.MapControllers();
+
+
+// Apply pending migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<BreweryDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();
