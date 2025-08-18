@@ -10,7 +10,7 @@ namespace BreweryApi.Services
     public class BreweryService : IBreweryService
     {
         private readonly IBreweryRepository _repository;
-        private readonly BreweryApiClient _apiClient;
+        private readonly IBreweryApiClient _apiClient;
         private readonly IMemoryCache _cache;
         private readonly IMapper _mapper;
         private readonly ILogger<BreweryService> _logger;
@@ -18,8 +18,8 @@ namespace BreweryApi.Services
         private const int CacheDuration = 10; // minutes
 
         public BreweryService(
-            IBreweryRepository repository, 
-            BreweryApiClient apiClient, 
+            IBreweryRepository repository,
+            IBreweryApiClient apiClient, 
             IMemoryCache cache,
             IMapper mapper, 
             ILogger<BreweryService> logger)

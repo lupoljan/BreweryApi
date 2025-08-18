@@ -26,7 +26,7 @@ builder.Services.AddDbContext<BreweryDbContext>(options =>
 builder.Services.AddScoped<IBreweryRepository, EfBreweryRepository>();
 
 builder.Services.AddScoped<IBreweryService, BreweryService>();
-builder.Services.AddHttpClient<BreweryApiClient>();
+builder.Services.AddHttpClient<IBreweryApiClient, BreweryApiClient>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));

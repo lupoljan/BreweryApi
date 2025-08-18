@@ -3,7 +3,7 @@ using BreweryApi.Models;
 
 namespace BreweryApi.Services
 {
-    public class BreweryApiClient
+    public class BreweryApiClient : IBreweryApiClient
     {
         private readonly HttpClient _httpClient;
         private readonly IMapper _mapper;
